@@ -1,41 +1,40 @@
-
-
 public class Main {
 	
 	public static void main(String[] args) {
-		Graph.init();
-		Data crystal = Std.CONST(1, 0);
-		Data rst = Std.CONST(1, 0);
-		Data clk = CLKGEN(crystal, rst, 0);
-		Data a = Std.CONST(5, 0);
-		Data b = Std.CONST(5, 1);
-		Data res = MAC(clk, a, b, rst);
-		Std.MODULE_BUNDLE(new Data[]{crystal, rst, a, b}, new Data[]{res});
 		
-		Graph.printGraph();
-		System.out.println();
-		Graph.visualizeGraph();
-		System.out.println();
-		Graph.parseGraph();
-		//System.out.println(Graph.generateVerilog());
+		Graph.init();
+		Clock clk = new Clock(1);
+		Data rst = Std.CONST(1, 0);
+		rst.setTag("rst");
+		Data a = Std.CONST(5, 0);
+		a.setTag("a");
+		Data b = Std.CONST(5, 1);
+		b.setTag("b");
+		Data res = MAC(clk, a, b, rst);
+		res.setTag("res");
+		Data trueRes = math(a, b, res);
+		Graph.parseModules(false, true, true);
 	}
 	
-	public static Data CLKGEN(Data crystal, Data rst, int initialVal) {
-		Data init = Std.CONST(1, initialVal);
-		Data clk = Data.EMPTY();
-		clk.fill(Std.DELAY(Std.MUX(clk, init, rst), crystal));
-		Std.MODULE_BUNDLE(new Data[]{crystal, rst}, new Data[]{clk});
-		return clk;
+	public static Data math(Data in1, Data in2, Data in3) {
+		in2.setTag("in2");
+		in3.setTag("in3");
+		return Std.ADD(Std.NOT(in1), Std.SPLIT(Std.CONCAT(in2, in3), 0, 4));
 	}
 	
-	public static Data MAC(Data clk, Data in1, Data in2, Data rst) {
+	public static Data MAC(Clock clk, Data in1, Data in2, Data rst) {
 		Data mult = Std.MULT(in1, in2);
-		Data sum = new Data(-1);
+		mult.setTag("mult");
+		Data sum = Data.EMPTY();
+		sum.setTag("sum");
 		Data acc = Std.ADD(mult, sum);
-		Data val = Std.MUX(acc, Std.CONST(in1.getLen(), 0), rst);
+		acc.setTag("acc");
+		Data val = Std.MUX(acc, Std.CONST(in1.getLen(), 0).setTag("rst_val"), rst);
+		val.setTag("val");
 		sum.fill(Std.DELAY(val, clk));
-		Std.MODULE_BUNDLE(new Data[]{clk, in1, in2, rst}, new Data[]{sum});
-		return sum;
+		Data out = Std.PASS(sum);
+		Std.MODULE_BUNDLE_2(new Data[]{clk, in1, in2, rst}, new Data[]{out}, "MAC");
+		return out;
 	}
 	
 }

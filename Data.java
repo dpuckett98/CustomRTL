@@ -3,11 +3,13 @@ import java.util.ArrayList;
 public class Data {
 	
 	// typical data stuff
-	
+	private String tag;
+	private ArrayList<String> specialTags;
 	private Node source;
 	private ArrayList<Node> sinks;
 	private int length; // if length is -1, data is empty
 	private int ID;
+	protected boolean isClock;
 	
 	public static Data EMPTY() {
 		return new Data(-1);
@@ -22,12 +24,41 @@ public class Data {
 		this.moduleOut = -1;
 		this.moduleInput = false;
 		this.moduleOutput = false;
+		isClock = false;
+		tag = "";
+		specialTags = new ArrayList<String>();
+	}
+	
+	// adds tag
+	public Data setTag(String tag) {
+		this.tag = tag;
+		return this;
+	}
+	
+	public String getTag() {
+		return tag;
+	}
+	
+	// special tag
+	public Data addSpecialTag(String specialTag) {
+		specialTags.add(specialTag);
+		return this;
+	}
+	
+	public boolean hasSpecialTag(String val) {
+		return specialTags.contains(val);
+	}
+	
+	public void copySpecialTags(Data other) {
+		specialTags.addAll(other.specialTags);
 	}
 	
 	// fills empty 
 	public void fill(Data d) {
 		Util.ASSERT(isEmpty(), "WARNING: Should only fill object that is empty");
 		Util.ASSERT(!(hasSource() && d.hasSource()), "ERROR: Cannot fill data with a source");
+		// update length
+		length = d.getLen();
 		// combine sources
 		if (!hasSource()) {
 			if (d.hasSource()) {
@@ -42,6 +73,10 @@ public class Data {
 			n.addSource(this);
 			n.getSources().remove(d);
 		}
+	}
+	
+	public boolean isClock() {
+		return isClock;
 	}
 	
 	public int getLen() {
@@ -73,7 +108,11 @@ public class Data {
 	}
 	
 	public String getVerilog() {
-		return "Data_" + ID;
+		if (tag == "") {
+			return "Data_" + ID;
+		} else {
+			return tag + "_" + ID;
+		}
 	}
 	
 	public boolean isEmpty() {
